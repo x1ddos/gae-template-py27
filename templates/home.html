@@ -1,0 +1,54 @@
+{% extends 'layouts/default.html' %}
+{% import '_forms.html' as forms %}
+
+{% block main %}
+  <h1>My App Engine template for python27 runtime</h1>
+  It's a heavy one.
+  
+  <p>In this template:</p>
+  <ul>
+    <li>webapp2</li>
+    <li>Jinja2</li>
+    <li>i18n with Babel and gae-pytz</li>
+    <li>unit tests base</li>
+    <li>Clousure lib utils</li>
+  </ul>
+
+  <pre style="border: 1px solid #ccc; background: #eee; border-radius: 3px; padding: 10px; width: 800px">
+>> make help
+
+Please use 'make &lt;target>' where &lt;target> is one of
+
+  (t)est      to run unit testing. For a single module test use this:
+              make t MOD=mod_name
+  (cov)erage  to make test coverage report
+  (s)erve     to start the app on development server
+  (r)emote    to run Remote API shell
+  deploy      to deploy the app on production servers
+
+  bootstrap   to generate virtualenv in Makefile:VENV_DIR (ONCE, at the very beginning) 
+              and install needed packages from requirements.txt
+
+  == Babel and i18n
+
+  1. babel_extract                     - extracts all translactions according to babel.cfg
+  2. babel_init LOCALE=&lt;your_locale>   - inits messages.pot (ONCE per language)
+  3. translate locale/&lt;lang>/LC_MESSAGES/messages.po
+  4. babel_compile                     - compiles all translations
+  - iterage: 
+    * repeat step 1.
+    * run 'make babel_update LOCALE=&lt;your_locale>'
+    * repeat step 3 and 4
+
+You can always use FLAGS='--whatever' as addition arguments to any target.
+  </pre>
+
+
+  <p>Testing Jinja2 rendering context, macros importing and a simple i18n here.</p>
+  <div id="whatever">{{ msg }}</div>
+  {{ forms.btn('btn', _('Random button'), 'Just a button') }}
+{% endblock %}
+
+{% block bottom %}
+  <!--<script src="/js/whatever/main.js"></script>-->
+{% endblock %}

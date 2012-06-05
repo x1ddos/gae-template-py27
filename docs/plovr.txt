@@ -1,0 +1,36 @@
+So far, the new config options include:
+
+css-inputs
+css-allowed-unrecognized-properties
+css-allowed-non-standard-functions
+css-gss-function-map-provider
+css-output-file
+
+Basically, you list the CSS files you want to include, in order, in css-inputs. 
+(I don't support directories or automatic dependency calculation yet for CSS files.) 
+Then next three properties in the above list are optional. Finally, css-output-file can be used 
+to specify where to write your compiled CSS in build mode. (Closure Stylesheets is supported 
+in both "build" and "serve" modes.)
+
+Eager beavers will note that I have not added support for the minification stuff yet.
+
+You may also wonder why out of all possible things, I decided to prioritize css-gss-function-map-provider, 
+but I'm hoping to put together a blog post with an example of when you'd want to add a custom function.
+
+Also, I'm curious to hear feedback about this approach. Currently, these properties go in a plovr config, 
+just like JS properties. A plovr config could have just CSS or JS build info, 
+or you could make separate configs. I figured that for the single page webapp builders,
+it's simpler to have everything in one config, and if you have one stylesheet to serve many things, 
+then you would just make a separate config for the CSS and one config for each JS target as you do right now.
+
+Further, instead of doing something like:
+
+"css": {
+  "input-files": ...
+  "output-file": ...
+}
+
+I am just prefixing everything with "css-" because it's easier to override things using config inheritance 
+when they're broken out this way. Admittedly I could make config inheritance more clever 
+(like by supporting some sort of dot notation in property keys), but I'm not eager to make that more clever, 
+so this seems more straightforward.

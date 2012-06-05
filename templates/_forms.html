@@ -1,0 +1,7 @@
+{% macro btn(id, value, title='', primary=True) -%}
+  {% if primary -%}
+    <div id="{{ id }}" class="goog-css3-button goog-inline-block goog-css3-button-primary" title="{{ title }}">{{ value }}</div>
+  {% else %}
+    <div id="{{ id }}" class="goog-css3-button goog-inline-block" title="{{ title }}">{{ value }}</div>
+  {%- endif %}
+{%- endmacro %}

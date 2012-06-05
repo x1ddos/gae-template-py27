@@ -1,0 +1,31 @@
+1. Check for various vars in Makefile, especially VENV_DIR.
+2. make bootstrap, follow instructions (e.g. source venv/bin/activate)
+3. make t (should work)
+
+
+>> make help
+
+Please use 'make <target>' where <target> is one of
+
+  (t)est      to run unit testing. For a single module test use this:
+              make t MOD=mod_name
+  (cov)erage  to make test coverage report
+  (s)erve     to start the app on development server
+  (r)emote    to run Remote API shell
+  deploy      to deploy the app on production servers
+
+  bootstrap   to generate virtualenv in  (ONCE, at the very beginning) 
+              and install needed packages from requirements.txt
+
+  == Babel and i18n
+
+  1. babel_extract                     - extracts all translactions according to babel.cfg
+  2. babel_init LOCALE=<your_locale>   - inits messages.pot (ONCE per language)
+  3. translate locale/<lang>/LC_MESSAGES/messages.po
+  4. babel_compile                     - compiles all translations
+  - iterate: 
+    * repeat step 1.
+    * run 'make babel_update LOCALE=<your_locale>'
+    * repeat step 3 and 4
+
+You can always use FLAGS='--whatever' as addition arguments to any target.

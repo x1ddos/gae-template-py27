@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <!-- Mobile viewport optimized -->
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <title>{{ _('Hello world!') }}</title>
+    
+    <!--<link rel="stylesheet" href="/css/compiled.css" type="text/css">-->
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <div role="main">{% block main %}{% endblock %}</div>
+
+    <!--<script src="/js/closure/closure/goog/base.js"></script>
+    <script src="/js/deps.js"></script>-->
+    {% block bottom %}{% endblock %}
+  </body>
+</html>

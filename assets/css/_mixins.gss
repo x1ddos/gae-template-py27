@@ -1,0 +1,38 @@
+/**
+ * Useful mixins 
+ */
+ 
+@defmixin bgfg(BG_COLOR, FG_COLOR) {
+  background: BG_COLOR;
+  color: FG_COLOR;
+}
+
+@defmixin gradient-hsl(POS, HSL1, HSL2, HSL3, COLOR, FALLBACK_COLOR) {
+  background-color: FALLBACK_COLOR; /* fallback color if gradients are not supported */
+  background-image: linear-gradient(POS, hsl(HSL1, HSL2, HSL3), COLOR);
+  /* @alternate */ background-image: -webkit-linear-gradient(POS, hsl(HSL1, HSL2, HSL3), COLOR);               /* Chrome 10+,Safari 5.1+ */
+  /* @alternate */ background-image: -moz-linear-gradient(POS, hsl(HSL1, HSL2, HSL3), COLOR); /* FF3.6+ */
+  /* @alternate */ background-image: -ms-linear-gradient(POS, hsl(HSL1, HSL2, HSL3), COLOR);  /* IE10 */
+  /* @alternate */ background-image: -o-linear-gradient(POS, hsl(HSL1, HSL2, HSL3), COLOR);   /* Opera 11.10+ */
+}
+
+@defmixin gradient(POS, FROM_COLOR, TO_COLOR) {
+  background-color: FROM_COLOR;
+  background-image: linear-gradient(POS, FROM_COLOR, TO_COLOR);
+  /* @alternate */ background-image: -webkit-linear-gradient(POS, FROM_COLOR, TO_COLOR);
+  /* @alternate */ background-image: -moz-linear-gradient(POS, FROM_COLOR, TO_COLOR);
+  /* @alternate */ background-image: -o-linear-gradient(POS, FROM_COLOR, TO_COLOR);
+  /* @alternate */ background-image: -ms-linear-gradient(POS, FROM_COLOR, TO_COLOR);
+
+}
+
+@defmixin round-corners(RADIUS) {
+  border-radius: RADIUS;
+  /* @alternate */ -webkit-border-radius: RADIUS; /* Chrome 10+, Safari 5.1+ */
+  /* @alternate */ -moz-border-radius: RADIUS;    /* FF3.6+ */
+}
+
+@defmixin appearance(APPEARANCE) {
+  -moz-appearance: APPEARANCE;
+  /* @alternate */ -webkit-appearance: APPEARANCE;
+}

@@ -1,0 +1,9 @@
+# Backends configuration
+#
+# See https://developers.google.com/appengine/docs/python/config/backends
+#
+backends:
+# - name: backend_name
+#   class: B1
+#   options: dynamic
+#   instances: 1

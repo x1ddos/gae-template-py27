@@ -1,0 +1,16 @@
+# Scheduled Tasks configuration
+#
+# See https://developers.google.com/appengine/docs/python/config/cron
+
+cron:
+# - description: daily summary job
+#   url: /tasks/summary
+#   schedule: every 24 hours
+# - description: monday morning mailout
+#   url: /mail/weekly
+#   schedule: every monday 09:00
+#   timezone: Australia/NSW
+# - description: new daily summary job
+#   url: /tasks/summary
+#   schedule: every 24 hours
+#   target: version-2

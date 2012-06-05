@@ -1,0 +1,6 @@
+/**
+ * Base colors
+ */
+
+@def FG              #xxxxxx;
+@def BG              #xxxxxx;
