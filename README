@@ -1,7 +1,10 @@
-1. Check for various vars in Makefile, especially VENV_DIR.
-2. make bootstrap, follow instructions (e.g. source venv/bin/activate)
-3. make t (should work)
+This one is heavy.
 
+1. Clone the repo
+3. Check for various vars in Makefile, especially VENV_DIR.
+4. make bootstrap, follow instructions (e.g. source venv/bin/activate)
+5. make t (should work)
+6. rm -rf .git && git init
 
 >> make help
 

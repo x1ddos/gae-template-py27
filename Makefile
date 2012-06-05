@@ -75,7 +75,7 @@ default: help
 
 help:
 	@echo
-	@echo "Please use 'make <target>' where <target> is one of"
+	@echo "Use 'make <target>' where <target> is one of"
 	@echo
 	@echo "  (t)est      to run unit testing. For a single module test use this:"
 	@echo "              make t MOD=mod_name"
