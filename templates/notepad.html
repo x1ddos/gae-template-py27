@@ -1,0 +1,19 @@
+{% extends "layouts/default.html" %}
+{% import '_forms.html' as forms %}
+
+{% block main %}
+  <h1>Notepad test</h1>
+  <p>This little notepad is using Closure library. You should be able to modify and make new notes.</p>
+  <p>{{ forms.safe_href_to('&laquo; Back to home', '/') }}</p>
+  <div id="notes" style="width: 500px; margin-bottom: 1em"></div>
+  {{ forms.btn('newNote', _('New note'), 'Create a new note') }}
+{% endblock %}
+
+{% block bottom %}
+  <script>
+    goog.require('notepad.start');
+  </script>  
+  <script>
+    notepad.start('notes', 'newNote');
+  </script>  
+{% endblock %}

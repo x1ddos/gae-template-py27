@@ -2,8 +2,8 @@
 {% import '_forms.html' as forms %}
 
 {% block main %}
-  <h1>My App Engine template for python27 runtime</h1>
-  It's a heavy one.
+  <h1>A not-so-small App Engine template for python27 runtime</h1>
+  <p><a href="/notepad">Notepad test</a></p>
   
   <p>In this template:</p>
   <ul>
@@ -11,7 +11,7 @@
     <li>Jinja2</li>
     <li>i18n with Babel and gae-pytz</li>
     <li>unit tests base</li>
-    <li>Clousure lib utils</li>
+    <li>Clousure lib make targets</li>
   </ul>
 
   <pre style="border: 1px solid #ccc; background: #eee; border-radius: 3px; padding: 10px; width: 800px">
@@ -43,6 +43,7 @@ Please use 'make &lt;target>' where &lt;target> is one of
 You can always use FLAGS='--whatever' as addition arguments to any target.
   </pre>
 
+  <p>Source code: {{ forms.href('http://code.google.com/p/my-gae-template-py27') }}</p>
 
   <p>Testing Jinja2 rendering context, macros importing and a simple i18n here.</p>
   <div id="whatever">{{ msg }}</div>

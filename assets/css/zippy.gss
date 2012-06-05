@@ -1,0 +1,34 @@
+.goog-zippy-header {
+  @mixin bgfg(BLUE, #000);
+  margin-top: 10px;
+  margin-bottom: 0px;
+  cursor: pointer;
+  padding: 1px 3px;
+	outline: 0;
+}
+
+.goog-zippy-content {
+  background: #dff8ff;
+  color: #222;
+  border: solid #bff1fe;
+  border-width: 0px 3px 3px 3px;
+  margin-top: 0px;
+  padding: 3px;
+  text-align: justify;
+  overflow: hidden;
+}
+
+.goog-zippy-expanded img {
+  background-image: url(/img/minus.png);
+}
+.goog-zippy-collapsed img {
+  background-image: url(/img/plus.png);
+}
+
+
+/*
+img {
+  width: 19px;
+  height: 16px;
+}
+*/

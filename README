@@ -8,19 +8,18 @@ This one is heavy.
 
 >> make help
 
-Please use 'make <target>' where <target> is one of
+Use 'make <target>' where <target> is one of
 
   (t)est      to run unit testing. For a single module test use this:
               make t MOD=mod_name
   (cov)erage  to make test coverage report
   (s)erve     to start the app on development server
   (r)emote    to run Remote API shell
-  deploy      to deploy the app on production servers
 
   bootstrap   to generate virtualenv in  (ONCE, at the very beginning) 
               and install needed packages from requirements.txt
 
-  == Babel and i18n
+  == i18n and Babel
 
   1. babel_extract                     - extracts all translactions according to babel.cfg
   2. babel_init LOCALE=<your_locale>   - inits messages.pot (ONCE per language)
@@ -30,5 +29,16 @@ Please use 'make <target>' where <target> is one of
     * repeat step 1.
     * run 'make babel_update LOCALE=<your_locale>'
     * repeat step 3 and 4
+
+  == Closure-related stuff
+
+  css         to compile assets/css/*.gss into assets/css/compiled.css
+  jsdeps      to generate assets/js/deps.js
+  (js)compile to compile JS assets into assets/js/compiled.js
+
+  == Deployment-related stuff
+
+  deploy      to deploy the app on production servers. You could do
+              make deploy VER=myver FLAGS=-v
 
 You can always use FLAGS='--whatever' as addition arguments to any target.

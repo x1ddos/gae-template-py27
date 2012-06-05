@@ -5,3 +5,11 @@
     <div id="{{ id }}" class="goog-css3-button goog-inline-block" title="{{ title }}">{{ value }}</div>
   {%- endif %}
 {%- endmacro %}
+
+{% macro safe_href_to(link_name, href, title='') -%}
+  <a href="{{ href }}" title="{{ title }}">{{ link_name|safe }}</a>
+{%- endmacro %}
+
+{% macro href(href, link_name, title='', target='') -%}
+  <a href="{{ href }}" title="{{ title }}" target="{{ target }}">{{ link_name or href }}</a>
+{%- endmacro %}

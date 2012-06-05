@@ -3,73 +3,74 @@ SHELL:=/bin/bash
 # Assuming all make commands will be run from where this Makefile is,
 # i.e. from the app root
 
-# vitualenv dir
+# vitualenv dir. Don't use a .venv within the app dir 
+# as it's being ignored by app.yaml/skip_files
 VENV_DIR      = ~/.venv/my-gae-template
 PYTHON        = $(VENV_DIR)/bin/python
 BABEL         = $(VENV_DIR)/bin/pybabel
 COVERAGE      = $(VENV_DIR)/bin/coverage
+# Only needed for Closure stuff
 JAVA          = `which java`
-
-# These are useful for overriding too.
-# Application ID
-APP_ID        = `grep 'application: ' app.yaml | sed s'/application: //'`
-# Version to deploy on production
-VER=
-# All python modules that are not test cases
-NONTESTS=`find handlers models lib -name [a-z]\*.py ! -name \*_test.py`
-
-# Additional flags to compiler.jar
-CLOSURE_COMPILER_FLAGS=
-
-# Temp dir for dev appengine server for stuff like db.sqlite and blobs
-TMP_DIR       = tmp
-
-# Base dir for Javascript files
-ASSETS_JS     = assets/js
-
-# Base dir for Stylesheets
-ASSETS_CSS    = assets/css
-
-# Compiled output of all *.gss
-CSS_OUT       = compiled.css
-
-# Compiled Javascripts (with advanced optimisations)
-JS_OUT        = compiled.js
-
-
-JS_SRCDIRS    = dir1 dir2
-JS_NAMESPACES = app.start
-JS_DEPSFILE   = deps.js
-CLOSURE_LIB   = closure/
 
 GAE_SDK       = /usr/local/google_appengine
 PORT          = 8080
+# Temp dir for dev appengine server for stuff like db.sqlite and blobs
+TMP_DIR       = tmp
+
+# These are useful for overriding too.
+# Application ID, default is to take whatever's in app.yaml
+APP_ID        = `grep 'application: ' app.yaml | sed s'/application: //'`
+# Version to deploy on production. A better use is
+# make deploy VER=myver
+VER=
+
+# All python modules that are not test cases
+NONTESTS=`find handlers models lib -name [a-z]\*.py ! -name \*_test.py`
+
+# "static" assets
+
+# Base dir for Stylesheets
+ASSETS_CSS    = assets/css
+# Compiled output of all *.gss
+CSS_OUT       = compiled.css
+
+# Base dir for Javascript files
+ASSETS_JS     = assets/js
+# Compiled Javascripts (with advanced optimisations)
+JS_OUT        = compiled.js
+
+# Javascript source dirs, space-separated.
+# These are closure-like namespaced JS (goog.provide/require)
+# If you want to have a finer-grained control, 
+# see comments above jsdeps target
+# JS_SRCDIRS    = notepad
+
+# Which namespaces we'll need to calculate deps.js on
+JS_NAMESPACES = notepad.start
+JS_DEPSFILE   = deps.js
+# related to app root.
+# If you change this, modify app.yaml/skip_files too
+CLOSURE_LIB   = assets/js/closure-lib
 
 # Javascript stuff and Closure builder/compiler
-CLOSURE_DEPSWRITER     = tools/compiler/depswriter.py
-CLOSURE_BUIDLER        = tools/compiler/closurebuilder.py
-CLOSURE_COMPILER_JAR   = tools/compiler/compiler.jar
 
-JSCOMP_FLAGS := $(CLOSURE_COMPILER_FLAGS) --warning_level=VERBOSE
-JSCOMP_FLAGS += --compilation_level=ADVANCED_OPTIMIZATIONS
-JSCOMP_FLAGS += --define=goog.DEBUG=false
-JSCOMP_FLAGS += --summary_detail_level=3
-#JSCOMP_FLAGS += --use_types_for_optimization
-#JSCOMP_FLAGS += --output_wrapper="(function(){%output%})();"
-
-CLOSURE_BUILDER_ARGS =  --root=$(ASSETS_JS)/$(CLOSURE_LIB)
-CLOSURE_BUILDER_ARGS += $(addprefix --root=$(ASSETS_JS)/,$(JS_SRCDIRS))
-CLOSURE_BUILDER_ARGS += $(addprefix -n ,$(JS_NAMESPACES))
-CLOSURE_BUILDER_ARGS += -o compiled
-CLOSURE_BUILDER_ARGS += -c $(CLOSURE_COMPILER_JAR)
-CLOSURE_BUILDER_ARGS += $(JSCOMP_FLAGS:%=-f "%")
-#CLOSURE_BUILDER_ARGS += -f "$(CLOSURE_COMPILER_FLAGS)"
-
+# Locations of Closure tools (app-root related)
+# *.py and other stuff usually comes from 
+# CLOSURE_LIB/closure/bin/build
+CLOSURE_DEPSWRITER     = $(CLOSURE_LIB)/closure/bin/build/depswriter.py
+CLOSURE_BUIDLER        = $(CLOSURE_LIB)/closure/bin/build/closurebuilder.py
+CLOSURE_COMPILER_JAR   = ~/src/closure/compiler/build/compiler.jar
 # CSS/GSS stuff
-CLOSURE_STYLESHEETS_JAR = tools/closure-stylesheets.jar
+CLOSURE_STYLESHEETS_JAR = ~/src/closure/stylesheets/build/closure-stylesheets.jar
+# Soy
+SOY_TO_JS               = ~/src/closure/templates/build/SoyToJsSrcCompiler.jar
+SOY_MSG_EXTRACTOR       = ~/src/closure/templates/build/SoyMsgExtractor.jar
 
-# Additional flags to any make <target>'s underlying command.
+
+# Additional flags to compiler.jar or any other make target.
+# e.g. "--use_types_for_optimization --output_wrapper=\"(function(){%output%})();\" ..."
 FLAGS=
+
 
 default: help
 
@@ -82,12 +83,11 @@ help:
 	@echo "  (cov)erage  to make test coverage report"
 	@echo "  (s)erve     to start the app on development server"
 	@echo "  (r)emote    to run Remote API shell"
-	@echo "  deploy      to deploy the app on production servers"
 	@echo
 	@echo "  bootstrap   to generate virtualenv in $(VENV) (ONCE, at the very beginning) "
 	@echo "              and install needed packages from requirements.txt"
 	@echo
-	@echo "  == Babel and i18n"
+	@echo "  == i18n and Babel"
 	@echo
 	@echo "  1. babel_extract                     - extracts all translactions according to babel.cfg"
 	@echo "  2. babel_init LOCALE=<your_locale>   - inits messages.pot (ONCE per language)"
@@ -98,8 +98,22 @@ help:
 	@echo "    * run 'make babel_update LOCALE=<your_locale>'"
 	@echo "    * repeat step 3 and 4"
 	@echo
+	@echo "  == Closure-related stuff"
+	@echo 
+	@echo "  css         to compile assets/css/*.gss into $(ASSETS_CSS)/$(CSS_OUT)"
+	@echo "  jsdeps      to generate $(ASSETS_JS)/deps.js"
+	@echo "  (js)compile to compile JS assets into $(ASSETS_JS)/$(JS_OUT)"
+	@echo
+	@echo "  == Deployment-related stuff"
+	@echo
+	@echo "  deploy      to deploy the app on production servers. You could do"
+	@echo "              make deploy VER=myver FLAGS=-v"
+	@echo
 	@echo "You can always use FLAGS='--whatever' as addition arguments to any target."
-
+	@echo
+	@echo "To activate this virtualenv:"
+	@echo ">> source $(VENV_DIR)/bin/activate"
+	@echo
 
 MOD=
 ifeq ($(strip $(MOD)),)
@@ -127,6 +141,7 @@ s serve:
 		--datastore_path=$(TMP_DIR)/db.sqlite \
 		--high_replication \
 		--require_indexes \
+		--disable_static_caching \
 		--skip_sdk_update_check
 
 deploy:
@@ -140,20 +155,53 @@ r remote:
 	@echo "Connecting to $(HOST) ..."
 	@$(PYTHON) $(GAE_SDK)/remote_api_shell.py --secure -s $(HOST) $(FLAGS)
 
+# GSS/CSS stuff
+
 css:
 	$(JAVA) -jar $(CLOSURE_STYLESHEETS_JAR) $(ASSETS_CSS)/*.gss $(FLAGS) \
 		> $(ASSETS_CSS)/$(CSS_OUT)
 
+
+# Closure lib / JS stuff
+
+# Args for jsdeps (depswriter.py)
+# JS_ROOTS_WITH_PREFIXES = $(foreach jsdir, $(JS_SRCDIRS), --root_with_prefix="$(ASSETS_JS)/$(jsdir) ../../../$(jsdir)")
+# If you want to use the above, uncomment JS_SRCDIRS and 
+# replace --root_with_prefix with $(JS_ROOTS_WITH_PREFIXES) below
 jsdeps:
 	$(PYTHON) $(CLOSURE_DEPSWRITER) $(FLAGS) \
-		--root_with_prefix="assets/js/notepad/ ../../../notepad" \
+		--root_with_prefix="$(ASSETS_JS)/ ../../../" \
 		> $(ASSETS_JS)/$(JS_DEPSFILE)
 
+
+# Real arguments for closure compiler
+JSCOMP_FLAGS := $(FLAGS) --warning_level=VERBOSE
+JSCOMP_FLAGS += --compilation_level=ADVANCED_OPTIMIZATIONS
+JSCOMP_FLAGS += --define=goog.DEBUG=false
+JSCOMP_FLAGS += --summary_detail_level=3
+
+# Arguments for closurebuilder.py
+OUTPUT_MODE = compiled
+# If you want to have a finer-grained control, 
+# see jsdeps target and JS_SRCDIRS description
+#CLOSURE_BUILDER_ARGS += $(addprefix --root=$(ASSETS_JS)/,$(JS_SRCDIRS))
+CLOSURE_BUILDER_ARGS := --root=$(CLOSURE_LIB)
+CLOSURE_BUILDER_ARGS += --root=$(ASSETS_JS)
+CLOSURE_BUILDER_ARGS += $(addprefix -n ,$(JS_NAMESPACES))
+CLOSURE_BUILDER_ARGS += -o $(OUTPUT_MODE)
+CLOSURE_BUILDER_ARGS += -c $(CLOSURE_COMPILER_JAR)
+CLOSURE_BUILDER_ARGS += $(JSCOMP_FLAGS:%=-f "%")
+
+CLOSURE_BUILDER_CMD  := $(CLOSURE_BUIDLER) $(CLOSURE_BUILDER_ARGS)
+ifneq ($(strip $(OUTPUT_MODE)), list)
+	CLOSURE_BUILDER_CMD += > $(ASSETS_JS)/$(JS_OUT)
+endif
+
 js jscompile:
-	$(PYTHON) $(CLOSURE_BUIDLER) $(CLOSURE_BUILDER_ARGS) $(FLAGS) \
-		> $(ASSETS_JS)/$(JS_OUT)
+	$(PYTHON) $(CLOSURE_BUILDER_CMD)
 
 
+# Files to clean up
 GENERATED_FILES =  $(ASSETS_JS)/$(JS_DEPSFILE)
 GENERATED_FILES +=  $(ASSETS_JS)/$(JS_OUT)
 GENERATED_FILES += $(ASSETS_CSS)/$(CSS_OUT)

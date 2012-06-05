@@ -4,3 +4,16 @@
 
 @def FG              #xxxxxx;
 @def BG              #xxxxxx;
+
+
+/**
+ * Test colors
+ */
+@def BLUE        #00C8FF;
+@def ORANGE      #FFB400;
+@def RED         #FF0064;
+@def GREEN       #C8FF00;
+
+@def GRAY        #E3E3E3;
+@def GRAY_L      adjustBrightness(GRAY, 8.5); /* #F9F9F9 */
+@def GRAY_D      adjustBrightness(GRAY, -10); /* #939393;*/

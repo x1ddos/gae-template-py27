@@ -113,16 +113,16 @@ handlers:
 
 - url: /(favicon\.ico|apple-touch-icon.*\.png)
   mime_type: image/png
-  static_files: static/\1
-  upload: assets/(favicon\.ico|apple-touch-icon.*\.png)
-
-- url: /(robots\.txt|humans\.txt|crossdomain\.xml|.+\.html)
   static_files: assets/\1
-  upload: assets/(robots\.txt|humans\.txt|crossdomain\.xml|.+\.html)
+  upload: assets/(favicon\.ico|apple-touch-icon.*\.png)
 
 - url: /(css|js|img)/(.*)
   static_files: assets/\1/\2
   upload: assets/(css|js|img)/(.*)
+
+- url: /(robots\.txt|humans\.txt|crossdomain\.xml|.+\.html)
+  static_files: assets/\1
+  upload: assets/(robots\.txt|humans\.txt|crossdomain\.xml|.+\.html)
 
 
 # Dynamic handlers
@@ -149,9 +149,17 @@ skip_files:
 - ^(.*/)?Makefile
 - ^(.*/)?.*\.gss
 - ^(.*/)?.*\.soy
+- assets/js/soyutils_usegoog.js
+- assets/js/deps.js
+- assets/js/closure-lib
+- assets/js/notepad$
+- assets/.*_tests?
 - requirements\.txt
 - tests.*
 - docs
 - htmlcov
 - tmp
 - babel.*\.cfg
+- locale/messages.pot
+- locale/.*/messages.po
+- .*\.(templ|template|example)$
