@@ -23,6 +23,8 @@ APP_ID        = `grep 'application: ' app.yaml | sed s'/application: //'`
 # Version to deploy on production. A better use is
 # make deploy VER=myver
 VER=
+# Used with MsgExtractor and Closure compiler i18n
+PROJECT_NAME  = notepad
 
 # All python modules that are not test cases
 NONTESTS=`find handlers models lib -name [a-z]\*.py ! -name \*_test.py`
@@ -63,9 +65,11 @@ CLOSURE_COMPILER_JAR   = ~/src/closure/compiler/build/compiler.jar
 # CSS/GSS stuff
 CLOSURE_STYLESHEETS_JAR = ~/src/closure/stylesheets/build/closure-stylesheets.jar
 # Soy
-SOY_TO_JS               = ~/src/closure/templates/build/SoyToJsSrcCompiler.jar
-SOY_MSG_EXTRACTOR       = ~/src/closure/templates/build/SoyMsgExtractor.jar
+SOY_TO_JS_JAR           = ~/src/closure/templates/build/SoyToJsSrcCompiler.jar
+#SOY_MSG_EXTRACTOR       = ~/src/closure/templates/build/SoyMsgExtractor.jar
 
+# Current locale in use with Babel and MsgExtractor
+LOCALE=
 
 # Additional flags to compiler.jar or any other make target.
 # e.g. "--use_types_for_optimization --output_wrapper=\"(function(){%output%})();\" ..."
@@ -100,9 +104,11 @@ help:
 	@echo
 	@echo "  == Closure-related stuff"
 	@echo 
-	@echo "  css         to compile assets/css/*.gss into $(ASSETS_CSS)/$(CSS_OUT)"
-	@echo "  jsdeps      to generate $(ASSETS_JS)/deps.js"
-	@echo "  (js)compile to compile JS assets into $(ASSETS_JS)/$(JS_OUT)"
+	@echo "  css              to compile assets/css/*.gss into $(ASSETS_CSS)/$(CSS_OUT)"
+	@echo "  jsdeps           to generate $(ASSETS_JS)/deps.js"
+	@echo "  (js)compile      to compile JS assets into $(ASSETS_JS)/$(JS_OUT)"
+	@echo "  js_extract_msg LOCALE=xx  to extract goog.getMsg() in XTB format > locale/messages.xtb"
+	@echo "  soy2js           to compile Soy templates"
 	@echo
 	@echo "  == Deployment-related stuff"
 	@echo
@@ -188,31 +194,51 @@ OUTPUT_MODE = compiled
 CLOSURE_BUILDER_ARGS := --root=$(CLOSURE_LIB)
 CLOSURE_BUILDER_ARGS += --root=$(ASSETS_JS)
 CLOSURE_BUILDER_ARGS += $(addprefix -n ,$(JS_NAMESPACES))
-CLOSURE_BUILDER_ARGS += -o $(OUTPUT_MODE)
 CLOSURE_BUILDER_ARGS += -c $(CLOSURE_COMPILER_JAR)
 CLOSURE_BUILDER_ARGS += $(JSCOMP_FLAGS:%=-f "%")
 
 CLOSURE_BUILDER_CMD  := $(CLOSURE_BUIDLER) $(CLOSURE_BUILDER_ARGS)
-ifneq ($(strip $(OUTPUT_MODE)), list)
-	CLOSURE_BUILDER_CMD += > $(ASSETS_JS)/$(JS_OUT)
+ifeq ($(strip $(OUTPUT_MODE)), list)
+	CLOSURE_BUILDER_CMD += -o $(OUTPUT_MODE)
+else
+	CLOSURE_BUILDER_CMD += -o $(OUTPUT_MODE) > $(ASSETS_JS)/$(JS_OUT)
 endif
 
+# For localization use something like 
+# make js LOCALE=it
+ifneq ($(strip $(LOCALE)),)
+	CLOSURE_BUILDER_CMD += -f "--translations_file=locale/$(LOCALE)/LC_MESSAGES/messages.xtb"
+	CLOSURE_BUILDER_CMD += -f "--translations_project=$(PROJECT_NAME)"
+	CLOSURE_BUILDER_CMD += -f "--define=goog.LOCALE='$(LOCALE)'"
+endif
+# make js FLAGS="--formatting PRETTY_PRINT"
 js jscompile:
 	$(PYTHON) $(CLOSURE_BUILDER_CMD)
 
+XTB_MESSAGES_POT=locale/messages.xtb
+js_extract_msg:
+	$(CLOSURE_BUIDLER) $(CLOSURE_BUILDER_ARGS) -o list > /tmp/jsfiles.txt
 
-# Files to clean up
-GENERATED_FILES =  $(ASSETS_JS)/$(JS_DEPSFILE)
-GENERATED_FILES +=  $(ASSETS_JS)/$(JS_OUT)
-GENERATED_FILES += $(ASSETS_CSS)/$(CSS_OUT)
+	@echo '<?xml version="1.0" ?>' > $(XTB_MESSAGES_POT)
+  #@echo '<\!DOCTYPE translationbundle>' >> $(XTB_MESSAGES_POT)
+	@echo "<translationbundle lang=\"$(LOCALE)\">" >> $(XTB_MESSAGES_POT)
+	for i in `cat /tmp/jsfiles.txt`; do \
+		java -cp $(CLOSURE_COMPILER_JAR):./tools MsgExtractor $(PROJECT_NAME) $$i; \
+	done >> $(XTB_MESSAGES_POT)
+	@echo "</translationbundle>" >> $(XTB_MESSAGES_POT)
 
-clean:
-	rm -rf htmlcov .coverage
-	rm -f  $(GENERATED_FILES)
-	rm -f `find . -name \*.pyc -o -name \*~ -o -name @\* -o -name \*.orig -o -name \*.rej -o -name \#*\#`
 
-# Locales management with Babel
-LOCALE=
+SOY_FILES      = $(wildcard templates/soy/*.soy)
+SOY_TO_JS_ARGS =  --outputPathFormat $(ASSETS_JS)/{INPUT_FILE_NAME_NO_EXT}/soy.js
+SOY_TO_JS_ARGS += --shouldGenerateJsdoc
+SOY_TO_JS_ARGS += --shouldProvideRequireSoyNamespaces
+SOY_TO_JS_ARGS += --shouldGenerateGoogMsgDefs
+SOY_TO_JS_ARGS += --bidiGlobalDir 1
+soy2js:
+	@echo Compitling these Soy templates: $(SOY_FILES)
+	$(JAVA) -jar $(SOY_TO_JS_JAR) $(SOY_TO_JS_ARGS) $(FLAGS) $(SOY_FILES)
+
+# Babel targets
 
 babel_extract:
 	@mkdir -p locale
@@ -226,6 +252,16 @@ babel_compile:
 
 babel_update:
 	$(BABEL) update -l $(LOCALE) -d locale -i locale/messages.pot
+
+# Files to clean up
+GENERATED_FILES =  $(ASSETS_JS)/$(JS_DEPSFILE)
+GENERATED_FILES +=  $(ASSETS_JS)/$(JS_OUT)
+GENERATED_FILES += $(ASSETS_CSS)/$(CSS_OUT)
+
+clean:
+	rm -rf htmlcov .coverage
+	rm -f  $(GENERATED_FILES)
+	rm -f `find . -name \*.pyc -o -name \*~ -o -name @\* -o -name \*.orig -o -name \*.rej -o -name \#*\#`
 
 
 # Bootstrapping 

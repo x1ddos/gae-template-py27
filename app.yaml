@@ -149,8 +149,9 @@ skip_files:
 - ^(.*/)?Makefile
 - ^(.*/)?.*\.gss
 - ^(.*/)?.*\.soy
-- assets/js/soyutils_usegoog.js
-- assets/js/deps.js
+- templates/soy
+- assets/js/soyutils_usegoog\.js
+- assets/js/deps\.js
 - assets/js/closure-lib
 - assets/js/notepad$
 - assets/.*_tests?
@@ -160,6 +161,6 @@ skip_files:
 - htmlcov
 - tmp
 - babel.*\.cfg
-- locale/messages.pot
-- locale/.*/messages.po
+- locale/messages\..*
+- locale/.*/messages\.(po|xtb)
 - .*\.(templ|template|example)$

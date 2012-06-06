@@ -6,6 +6,9 @@
 goog.provide('notepad.Note');
 goog.provide('notepad.makeNotes');
 
+goog.require('notepad.soy');
+
+goog.require('soy');
 goog.require('goog.dom');
 goog.require('goog.ui.Zippy');
 goog.require('goog.ui.CustomButton');
@@ -23,6 +26,12 @@ goog.require('goog.ui.Css3ButtonRenderer');
  *     instances.
  */
 notepad.makeNotes = function(data, noteContainer) {
+  /** @desc Name for a human */ 
+  var MSG_HUMAN = goog.getMsg('Dude');
+
+  var welcome = soy.renderAsFragment(notepad.soy.helloName, {name: MSG_HUMAN});
+  noteContainer.appendChild(welcome);
+
   var notes = [];
   for (var i = 0; i < data.length; i++) {
     var note = new notepad.Note(data[i], noteContainer);
@@ -31,8 +40,6 @@ notepad.makeNotes = function(data, noteContainer) {
   }
   return notes;
 };
-
-
 
 /**
  * Manages the data and interface for a single note.

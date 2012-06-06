@@ -1,0 +1,14 @@
+{namespace notepad.soy}
+
+/**
+ * Greets a person using "Hello" by default.
+ * @param name The name of the person.
+ * @param? greetingWord Optional greeting word to use instead of "Hello".
+ */
+{template .helloName}
+  {if not $greetingWord}
+    {msg desc="Simple greeting"}Hello {$name}. Welcome{/msg}!
+  {else}
+    {$greetingWord} {$name}!
+  {/if}
+{/template}
