@@ -1,0 +1,6 @@
+Try gettext_lazy instead, which won't do actual translation lookup until later (when you also know which language you want to translate to).
+
+A very common convention is
+
+from webapp2_extras.i18n import _lazy as _
+category_list['bikes'] = {'value': _('CATEGORY_BIKES')}

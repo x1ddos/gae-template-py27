@@ -1,12 +1,69 @@
-This one is heavy.
+= To started from scratch
 
 1. Clone the repo
-3. Check for various vars in Makefile, especially VENV_DIR.
+3. Check for bootstrap vars in Makefile (VENV_DIR)
 4. make bootstrap, follow instructions (e.g. source venv/bin/activate)
-5. make t (should work)
-6. rm -rf .git && git init
+5. make t (should pass all tests)
+6. mv README docs/from_scratch.txt
+7. Check for other vars in Makefile (NONTESTS, PROJECT_NAME, etc.)
+8. rm -rf .git && git init
 
->> make help
+== workflow for frontend would go something like this:
+
+1. Place Closure-namespaced JS files under assets/js/<name>/
+   - same goes for tests (see notepad example)
+   - you can then run tests individually, e.g. /js/notepad/notepad_test.html
+     or all of them from /js/all_tests.html (add tests to assets/js/all_tests.js)
+
+  See http://closure-library.googlecode.com/svn/docs/index.html
+  for API docs.
+
+2. When you add new JS namespaces/modules/files, make sure to run 
+   make jsdeps
+
+3. If you have Soy templates, do make soy2js. This will compile templates/soy/*.soy
+   into assets/js/<soy_filename>/soy.js
+   Also, see https://developers.google.com/closure/templates/docs/commands
+
+4. make js will compile the whole thing into assets/js/compiled.js
+   
+4a. To compile with i18n support, do this first:
+   - check PROJECT_NAME var in Makefile
+   - "make js_extract_msg". This will create locale/messages.xtb. Pass it on 
+     to the translation team and put translated files into locale/xx/LC_MESSAGES/messages.xtb
+   - compile the whole thing with "make js LOCALE=xx"
+
+5. For CSS, just do "make css". This will compile all assets/css/*.gss into assets/css/compiled.css.
+   See http://code.google.com/p/closure-stylesheets/ for details on GSS.
+
+== Jinja2 templates
+In dev mode, deps.js and goog/base.js should be referenced in a layout template.
+When switching to production/compiled mode, those will be removed/replaced with compiled.js.
+
+TODO: explain 
+  - how that happens
+  - how to use Closure modules
+  - how to switch between dev/production templates
+
+== backend testing
+
+All tests should be placed in tests/ dir. Just create a new file named xxx_test.py,
+it'll be automatically found and ran when you "make t"
+
+To run indivitual test files, do "make t MOD=xxx_test"
+
+See tests/handlers_base_test.py for handlers/functional testing, 
+tests/user_test.py for model testing.
+
+To see tests coverage, do "make cov". It'll display results in console +
+generate HTML report: "open htmlcov/index.html".
+
+Some resources on testing:
+- http://webtest.pythonpaste.org/en/latest/modules/webtest.html
+- https://developers.google.com/appengine/docs/python/tools/localunittesting
+
+
+= make help
 
 Use 'make <target>' where <target> is one of
 
@@ -32,9 +89,11 @@ Use 'make <target>' where <target> is one of
 
   == Closure-related stuff
 
-  css         to compile assets/css/*.gss into assets/css/compiled.css
-  jsdeps      to generate assets/js/deps.js
-  (js)compile to compile JS assets into assets/js/compiled.js
+  css              to compile assets/css/*.gss into assets/css/compiled.css
+  jsdeps           to generate assets/js/deps.js
+  (js)compile      to compile JS assets into assets/js/compiled.js
+  js_extract_msg LOCALE=xx  to extract goog.getMsg() in XTB format > locale/messages.xtb
+  soy2js           to compile Soy templates
 
   == Deployment-related stuff
 
