@@ -6,9 +6,11 @@
  * @param? greetingWord Optional greeting word to use instead of "Hello".
  */
 {template .helloName}
-  {if not $greetingWord}
-    {msg desc="Simple greeting"}Hello {$name}. Welcome{/msg}!
-  {else}
-    {$greetingWord} {$name}!
-  {/if}
+  <div class="{css goog-inline-block}">
+    {if not $greetingWord}
+      {msg desc="Simple greeting"}Hello {$name}. Welcome{/msg}!
+    {else}
+      {$greetingWord} {$name}!
+    {/if}
+  </div>
 {/template}

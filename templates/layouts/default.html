@@ -8,21 +8,19 @@
 
     <title>{{ _('Hello world!') }}</title>
     
-    <!--
-      Use "make css" for Closure-stylesheets compiled:-->
-      <link rel="stylesheet" href="/css/compiled.css" type="text/css">
-    
+    <!-- See "make css-{debug|compile}" for compiled(_debug).css-->
+    <link rel="stylesheet" href="/css/compiled_debug.css" type="text/css" data-build="tr:/css/compiled.css">
+
+    <!-- Closure Library dev mode -->
+    <script src="/js/cssmap_debug.js" data-build="remove"></script>
+    <script src="/js/closure-lib/closure/goog/base.js" data-build="remove"></script>
+    <script src="/js/deps.js" data-build="tr:/js/compiled.js"></script>
+
     {% block head %}{% endblock %}
   </head>
   <body>
     <div role="main">{% block main %}{% endblock %}</div>
-
-    <!--
-      Link Closure Library to assets/js/closure-lib
-    -->
-      <script src="/js/closure-lib/closure/goog/base.js"></script>
-      <script src="/js/deps.js"></script>
-    
+        
     {% block bottom %}{% endblock %}
   </body>
 </html>

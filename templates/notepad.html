@@ -10,10 +10,10 @@
 {% endblock %}
 
 {% block bottom %}
-  <script>
+  <script data-build="remove">
     goog.require('notepad.start');
   </script>  
-  <script>
+  <script data-build="compress">
     notepad.start('notes', 'newNote');
   </script>  
 {% endblock %}

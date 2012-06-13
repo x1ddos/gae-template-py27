@@ -3,70 +3,85 @@ SHELL:=/bin/bash
 # Assuming all make commands will be run from where this Makefile is,
 # i.e. from the app root
 
-# vitualenv dir. Don't use a .venv within the app dir 
-# as it's being ignored by app.yaml/skip_files
-VENV_DIR      = ~/.venv/my-gae-template
-PYTHON        = $(VENV_DIR)/bin/python
-BABEL         = $(VENV_DIR)/bin/pybabel
-COVERAGE      = $(VENV_DIR)/bin/coverage
-# Only needed for Closure stuff
-JAVA          = `which java`
-
-GAE_SDK       = /usr/local/google_appengine
-PORT          = 8080
-# Temp dir for dev appengine server for stuff like db.sqlite and blobs
-TMP_DIR       = tmp
-
 # These are useful for overriding too.
 # Application ID, default is to take whatever's in app.yaml
-APP_ID        = `grep 'application: ' app.yaml | sed s'/application: //'`
-# Version to deploy on production. A better use is
-# make deploy VER=myver
-VER=
-# Used with MsgExtractor and Closure compiler i18n
-PROJECT_NAME  = notepad
+APP_ID        := `grep 'application: ' app.yaml | sed s'/application: //'`
+# Used with MsgExtractor and Closure Compiler i18n
+PROJECT_NAME  := notepad
+# Which namespaces we'll need to calculate deps.js on
+JS_NAMESPACES   := notepad.start
+
+# HTML (Jinaj2) templates basedir
+TEMPLATES_DIR := templates
+# "static" assets
+ASSETS_DIR    := assets
+# Base dir for Stylesheets
+ASSETS_CSS    := $(ASSETS_DIR)/css
+# Base dir for Javascript files
+ASSETS_JS     := $(ASSETS_DIR)/js
+
+# Compiled output of all *.gss
+CSS_OUT       := $(ASSETS_CSS)/compiled.css
+CSS_DEBUG_OUT := $(ASSETS_CSS)/compiled_debug.css
+# Compiled Javascripts (with advanced optimisations)
+JS_OUT        := $(ASSETS_JS)/compiled.js
+
+# dependencies / other generated stuff
+JS_DEPSFILE     := $(ASSETS_JS)/deps.js
+CSSMAP_DEBUG_JS := $(ASSETS_JS)/cssmap_debug.js
+CSSMAP_JS       := $(ASSETS_JS)/cssmap_compiled.js
+CSSMAP_JSON     := $(ASSETS_JS)/cssmap.json
+
+# dev/build templates and assets locations
+# dev dirs are renamed to .*-dev when we're 'ready for production' 
+# built dirs are renamted to .*-build when in normal, development state. 
+ASSETS_DEV    := .assets-dev
+ASSETS_BUILD  := .assets-build
+TEMPL_DEV     := .templ-dev
+TEMPL_BUILD   := .templ-build
 
 # All python modules that are not test cases
-NONTESTS=`find handlers models lib -name [a-z]\*.py ! -name \*_test.py`
+NONTESTS := `find handlers models lib -name [a-z]\*.py ! -name \*_test.py`
 
-# "static" assets
+# Temp dir for dev appengine server for stuff like db.sqlite and blobs
+TMP_DIR       := tmp
 
-# Base dir for Stylesheets
-ASSETS_CSS    = assets/css
-# Compiled output of all *.gss
-CSS_OUT       = compiled.css
 
-# Base dir for Javascript files
-ASSETS_JS     = assets/js
-# Compiled Javascripts (with advanced optimisations)
-JS_OUT        = compiled.js
+# vitualenv dir. Don't use a .venv within the app dir 
+# as it's being ignored by app.yaml/skip_files
+VENV_DIR      := ~/.venv/my-gae-template
+PYTHON        := $(VENV_DIR)/bin/python
+BABEL         := $(VENV_DIR)/bin/pybabel
+COVERAGE      := $(VENV_DIR)/bin/coverage
+# Only needed for Closure stuff
+JAVA          := `which java`
 
-# Javascript source dirs, space-separated.
-# These are closure-like namespaced JS (goog.provide/require)
-# If you want to have a finer-grained control, 
-# see comments above jsdeps target
-# JS_SRCDIRS    = notepad
+GAE_SDK       := /usr/local/google_appengine
+PORT          := 8080
 
-# Which namespaces we'll need to calculate deps.js on
-JS_NAMESPACES = notepad.start
-JS_DEPSFILE   = deps.js
-# related to app root.
+# Clousure Library dir.
 # If you change this, modify app.yaml/skip_files too
-CLOSURE_LIB   = assets/js/closure-lib
-
-# Javascript stuff and Closure builder/compiler
+CLOSURE_LIB   := $(ASSETS_DIR)/js/closure-lib
 
 # Locations of Closure tools (app-root related)
 # *.py and other stuff usually comes from 
 # CLOSURE_LIB/closure/bin/build
-CLOSURE_DEPSWRITER     = $(CLOSURE_LIB)/closure/bin/build/depswriter.py
-CLOSURE_BUIDLER        = $(CLOSURE_LIB)/closure/bin/build/closurebuilder.py
-CLOSURE_COMPILER_JAR   = ~/src/closure/compiler/build/compiler.jar
+CLOSURE_DEPSWRITER      := $(CLOSURE_LIB)/closure/bin/build/depswriter.py
+CLOSURE_BUIDLER         := $(CLOSURE_LIB)/closure/bin/build/closurebuilder.py
+CLOSURE_COMPILER_JAR    := ~/src/closure/compiler/build/compiler.jar
 # CSS/GSS stuff
-CLOSURE_STYLESHEETS_JAR = ~/src/closure/stylesheets/build/closure-stylesheets.jar
+CLOSURE_STYLESHEETS_JAR := ~/src/closure/stylesheets/build/closure-stylesheets.jar
 # Soy
-SOY_TO_JS_JAR           = ~/src/closure/templates/build/SoyToJsSrcCompiler.jar
-#SOY_MSG_EXTRACTOR       = ~/src/closure/templates/build/SoyMsgExtractor.jar
+SOY_TO_JS_JAR           := ~/src/closure/templates/build/SoyToJsSrcCompiler.jar
+#SOY_MSG_EXTRACTOR       := ~/src/closure/templates/build/SoyMsgExtractor.jar
+
+# templates/assets assembler
+ASSETASM               := tools/assetasm.py
+ASSETASM_IGNORE        := $(ASSETS_JS)/notepad
+
+# Arguments for closurebuilder.py, assetasm.py (make templ|asset)
+# and Closure Stylesheets renaming map ()
+OUTPUT_MODE := compiled
 
 # Current locale in use with Babel and MsgExtractor
 LOCALE=
@@ -74,6 +89,10 @@ LOCALE=
 # Additional flags to compiler.jar or any other make target.
 # e.g. "--use_types_for_optimization --output_wrapper=\"(function(){%output%})();\" ..."
 FLAGS=
+
+# Version to deploy on production. A better use is
+# make deploy VER=myver
+VER=
 
 
 default: help
@@ -104,16 +123,39 @@ help:
 	@echo
 	@echo "  == Closure-related stuff"
 	@echo 
-	@echo "  css              to compile assets/css/*.gss into $(ASSETS_CSS)/$(CSS_OUT)"
+	@echo "  css-debug        to compile *.gss into $(CSS_DEBUG_OUT)"
+	@echo "  css-compiled     to compile and minify *.gss (with classes renaming)"
+	@echo "                   into $(CSS_OUT)"
+	@echo "                   Customize which files to compile and how with"
+	@echo "                   GSS_FILES=style.gss FLAGS=--rename DEBUG"
 	@echo "  jsdeps           to generate $(ASSETS_JS)/deps.js"
 	@echo "  (js)compile      to compile JS assets into $(ASSETS_JS)/$(JS_OUT)"
-	@echo "  js_extract_msg LOCALE=xx  to extract goog.getMsg() in XTB format > locale/messages.xtb"
-	@echo "  soy2js           to compile Soy templates"
+	@echo "                   OUTPUT_MODE=list to list dependencies"
+	@echo "                   LOCALE=xx to compile with i18n"
+	@echo "  js_extract_msg LOCALE=xx  "
+	@echo "                   to extract goog.getMsg() in XTB format > locale/messages.xtb"
+	@echo "  soy              to compile Soy templates. Override files to compile"
+	@echo "                   with SOY_FILES=..."
 	@echo
 	@echo "  == Deployment-related stuff"
 	@echo
-	@echo "  deploy      to deploy the app on production servers. You could do"
-	@echo "              make deploy VER=myver FLAGS=-v"
+	@echo "  templ       to assemble templates/*.html with tools/assetasm.py"
+	@echo "  assets      to assemble assets/*"
+	@echo "              Note take assetasm.py will also invoke assets "
+	@echo "              building when run with 'make templ'"
+	@echo
+	@echo "  Alternative output for templ and assets targets works with"
+	@echo "  OUTPUT_MODE={manifest|check}"
+	@echo
+	@echo "  deploy      to deploy the app on production servers."
+	@echo "              You could do make deploy VER=myver FLAGS=-v"
+	@echo "  2prod       will switch to production (build) version of assets"
+	@echo "              and templates"
+	@echo "  2dev        will switch to development version of assets"
+	@echo "              and templates"
+	@echo "  clean       removes .pyc, htmlcov, .coverage and CSS/JS compiled"
+	@echo "              stuff"
+	@echo "  clean-all   will also remove last assets and templates build"
 	@echo
 	@echo "You can always use FLAGS='--whatever' as addition arguments to any target."
 	@echo
@@ -141,34 +183,48 @@ cov coverage:
 
 s serve:
 	@mkdir -p $(TMP_DIR)/blobs
-	@PYTHONPATH=.:$(PYTHONPATH) $(PYTHON) $(GAE_SDK)/dev_appserver.py . --port $(PORT) $(FLAGS) \
+	@PYTHONPATH=.:$(PYTHONPATH) $(PYTHON) $(GAE_SDK)/dev_appserver.py . \
+		--port $(PORT) \
 		--blobstore_path=$(TMP_DIR)/blobs \
 		--use_sqlite \
 		--datastore_path=$(TMP_DIR)/db.sqlite \
 		--high_replication \
 		--require_indexes \
 		--disable_static_caching \
-		--skip_sdk_update_check
-
-deploy:
-	@echo "Deploying to $(APP_ID).appspot.com as version [$(VER)]"
-	@$(PYTHON) $(GAE_SDK)/appcfg.py -A $(APP_ID) -V $(VER) \
-		--oauth2 \
-	  $(FLAGS) update .
+		--skip_sdk_update_check \
+		$(FLAGS)
 
 HOST=$(APP_ID).appspot.com
 r remote:
 	@echo "Connecting to $(HOST) ..."
 	@$(PYTHON) $(GAE_SDK)/remote_api_shell.py --secure -s $(HOST) $(FLAGS)
 
+#
 # GSS/CSS stuff
+#
 
-css:
-	$(JAVA) -jar $(CLOSURE_STYLESHEETS_JAR) $(ASSETS_CSS)/*.gss $(FLAGS) \
-		> $(ASSETS_CSS)/$(CSS_OUT)
+CLOSURE_STYLESHEETS_CMD := $(JAVA) -jar $(CLOSURE_STYLESHEETS_JAR) $(FLAGS)
+GSS_FILES := $(wildcard $(ASSETS_CSS)/*.gss)
 
+# override with make css-debug FLAGS="--rename DEBUG"
+css-debug:
+	$(CLOSURE_STYLESHEETS_CMD) \
+		--rename NONE \
+		--output-renaming-map $(CSSMAP_DEBUG_JS) \
+		--output-renaming-map-format CLOSURE_UNCOMPILED \
+		 --pretty-print \
+	  $(FLAGS) $(GSS_FILES) > $(CSS_DEBUG_OUT)
 
+css-compiled:
+	$(CLOSURE_STYLESHEETS_CMD) \
+		--rename CLOSURE \
+		--output-renaming-map $(CSSMAP_JS) \
+		--output-renaming-map-format CLOSURE_COMPILED \
+		$(FLAGS) $(GSS_FILES) > $(CSS_OUT)
+
+#
 # Closure lib / JS stuff
+#
 
 # Args for jsdeps (depswriter.py)
 # JS_ROOTS_WITH_PREFIXES = $(foreach jsdir, $(JS_SRCDIRS), --root_with_prefix="$(ASSETS_JS)/$(jsdir) ../../../$(jsdir)")
@@ -177,7 +233,7 @@ css:
 jsdeps:
 	$(PYTHON) $(CLOSURE_DEPSWRITER) $(FLAGS) \
 		--root_with_prefix="$(ASSETS_JS)/ ../../../" \
-		> $(ASSETS_JS)/$(JS_DEPSFILE)
+		> $(JS_DEPSFILE)
 
 
 # Real arguments for closure compiler
@@ -185,9 +241,8 @@ JSCOMP_FLAGS := $(FLAGS) --warning_level=VERBOSE
 JSCOMP_FLAGS += --compilation_level=ADVANCED_OPTIMIZATIONS
 JSCOMP_FLAGS += --define=goog.DEBUG=false
 JSCOMP_FLAGS += --summary_detail_level=3
+JSCOMP_FLAGS += --js $(CSSMAP_JS)
 
-# Arguments for closurebuilder.py
-OUTPUT_MODE = compiled
 # If you want to have a finer-grained control, 
 # see jsdeps target and JS_SRCDIRS description
 #CLOSURE_BUILDER_ARGS += $(addprefix --root=$(ASSETS_JS)/,$(JS_SRCDIRS))
@@ -198,10 +253,11 @@ CLOSURE_BUILDER_ARGS += -c $(CLOSURE_COMPILER_JAR)
 CLOSURE_BUILDER_ARGS += $(JSCOMP_FLAGS:%=-f "%")
 
 CLOSURE_BUILDER_CMD  := $(CLOSURE_BUIDLER) $(CLOSURE_BUILDER_ARGS)
+
 ifeq ($(strip $(OUTPUT_MODE)), list)
 	CLOSURE_BUILDER_CMD += -o $(OUTPUT_MODE)
 else
-	CLOSURE_BUILDER_CMD += -o $(OUTPUT_MODE) > $(ASSETS_JS)/$(JS_OUT)
+	CLOSURE_BUILDER_CMD += -o $(OUTPUT_MODE) > $(JS_OUT)
 endif
 
 # For localization use something like 
@@ -215,8 +271,31 @@ endif
 js jscompile:
 	$(PYTHON) $(CLOSURE_BUILDER_CMD)
 
-XTB_MESSAGES_POT=locale/messages.xtb
-js_extract_msg:
+#
+# Soy templates
+#
+
+SOY_FILES      := $(wildcard $(TEMPLATES_DIR)/soy/*.soy)
+SOY_TO_JS_ARGS :=  --outputPathFormat $(ASSETS_JS)/{INPUT_FILE_NAME_NO_EXT}/soy.js
+SOY_TO_JS_ARGS += --shouldGenerateJsdoc
+SOY_TO_JS_ARGS += --shouldProvideRequireSoyNamespaces
+SOY_TO_JS_ARGS += --shouldGenerateGoogMsgDefs
+SOY_TO_JS_ARGS += --cssHandlingScheme GOOG
+SOY_TO_JS_ARGS += --bidiGlobalDir 1
+soy:
+	@echo Compitling these Soy templates: $(SOY_FILES)
+	$(JAVA) -jar $(SOY_TO_JS_JAR) $(SOY_TO_JS_ARGS) $(FLAGS) $(SOY_FILES)
+
+#
+# i18n / Babel targets
+#
+
+LOCALE_DIR := locale
+_ensure_locale_dir:
+	@mkdir -p $(LOCALE_DIR)
+
+XTB_MESSAGES_POT := $(LOCALE_DIR)/messages.xtb
+js_extract_msg: _ensure_locale_dir
 	$(CLOSURE_BUIDLER) $(CLOSURE_BUILDER_ARGS) -o list > /tmp/jsfiles.txt
 
 	@echo '<?xml version="1.0" ?>' > $(XTB_MESSAGES_POT)
@@ -226,45 +305,107 @@ js_extract_msg:
 		java -cp $(CLOSURE_COMPILER_JAR):./tools MsgExtractor $(PROJECT_NAME) $$i; \
 	done >> $(XTB_MESSAGES_POT)
 	@echo "</translationbundle>" >> $(XTB_MESSAGES_POT)
+	@mkdir -p $(LOCALE_DIR)/$(LOCALE)/LC_MESSAGES
+	@cp $(XTB_MESSAGES_POT) $(LOCALE_DIR)/$(LOCALE)/LC_MESSAGES/
 
-
-SOY_FILES      = $(wildcard templates/soy/*.soy)
-SOY_TO_JS_ARGS =  --outputPathFormat $(ASSETS_JS)/{INPUT_FILE_NAME_NO_EXT}/soy.js
-SOY_TO_JS_ARGS += --shouldGenerateJsdoc
-SOY_TO_JS_ARGS += --shouldProvideRequireSoyNamespaces
-SOY_TO_JS_ARGS += --shouldGenerateGoogMsgDefs
-SOY_TO_JS_ARGS += --bidiGlobalDir 1
-soy2js:
-	@echo Compitling these Soy templates: $(SOY_FILES)
-	$(JAVA) -jar $(SOY_TO_JS_JAR) $(SOY_TO_JS_ARGS) $(FLAGS) $(SOY_FILES)
-
-# Babel targets
-
-babel_extract:
-	@mkdir -p locale
-	$(BABEL) extract -k _T -F babel.cfg -o locale/messages.pot .
+babel_extract: _ensure_locale_dir
+	$(BABEL) extract -k _T -F babel.cfg -o $(LOCALE_DIR)/messages.pot .
 
 babel_init:
-	$(BABEL) init -l $(LOCALE) -d locale -i locale/messages.pot
+	$(BABEL) init -l $(LOCALE) -d $(LOCALE_DIR) -i $(LOCALE_DIR)/messages.pot
 
 babel_compile:
-	$(BABEL) compile -f -d locale
+	$(BABEL) compile -f -d $(LOCALE_DIR)
 
 babel_update:
-	$(BABEL) update -l $(LOCALE) -d locale -i locale/messages.pot
+	$(BABEL) update -l $(LOCALE) -d $(LOCALE_DIR) -i $(LOCALE_DIR)/messages.pot
+
+#
+# Dev/production(build) state switching
+#
+
+DEV_MARKER := .dev
+ASSETS_IN_DEV := $(shell test -f $(ASSETS_DIR)/$(DEV_MARKER) && echo 1)
+TEMPL_IN_DEV := $(shell test -f $(TEMPLATES_DIR)/$(DEV_MARKER) && echo 1)
+
+_assets2dev:
+	@if [ -z $(ASSETS_IN_DEV) ]; \
+		then mv $(ASSETS_DIR) $(ASSETS_BUILD) && mv $(ASSETS_DEV) $(ASSETS_DIR); \
+	fi
+
+_assets2prod:
+	@if [ -n $(ASSETS_IN_DEV) ]; \
+		then mkdir -p $(ASSETS_BUILD); \
+		mv $(ASSETS_DIR) $(ASSETS_DEV) && mv $(ASSETS_BUILD) $(ASSETS_DIR); \
+	fi
+
+_templ2dev:
+	@if [ -z $(TEMPL_IN_DEV) ]; \
+		then mv $(TEMPLATES_DIR) $(TEMPL_BUILD) && mv $(TEMPL_DEV) $(TEMPLATES_DIR); \
+	fi
+
+_templ2prod:
+	@if [ -n $(TEMPL_IN_DEV) ]; \
+		then mkdir -p $(TEMPL_BUILD); \
+		mv $(TEMPLATES_DIR) $(TEMPL_DEV) && mv $(TEMPL_BUILD) $(TEMPLATES_DIR); \
+	fi
+
+2dev: _assets2dev _templ2dev
+2prod: _assets2prod _templ2prod
+
+#
+# Templates and assets assembling
+#
+
+ASSETASM_ARGS := $(ASSETASM_IGNORE:%=--ignore '%')
+ASSETASM_ARGS += --ignore $(CSSMAP_JS)
+OUTPUT_MODE   := build
+
+assets: 2dev
+	$(PYTHON) $(ASSETASM)  $(ASSETASM_ARGS) \
+		--static-src $(ASSETS_DIR) \
+		--static-dst $(ASSETS_BUILD) \
+		$(FLAGS) static $(OUTPUT_MODE)
+
+templ: 2dev
+	$(PYTHON) $(ASSETASM) $(ASSETASM_ARGS) \
+		--static-src $(ASSETS_DIR) \
+		--static-dst $(ASSETS_BUILD) \
+		--templates-src $(TEMPLATES_DIR) \
+		--templates-dst $(TEMPL_BUILD) \
+		--compiler-jar $(CLOSURE_COMPILER_JAR) \
+		$(FLAGS) templates $(OUTPUT_MODE) 
+
+#
+# Deployment
+#
+
+deploy: 2prod
+	@echo "Deploying to $(APP_ID).appspot.com as version [$(VER)]"
+	@$(PYTHON) $(GAE_SDK)/appcfg.py -A $(APP_ID) -V $(VER) \
+		--oauth2 $(FLAGS) \
+	  update .
+
+#
+# Cleanup
+#
 
 # Files to clean up
-GENERATED_FILES =  $(ASSETS_JS)/$(JS_DEPSFILE)
-GENERATED_FILES +=  $(ASSETS_JS)/$(JS_OUT)
-GENERATED_FILES += $(ASSETS_CSS)/$(CSS_OUT)
+GENERATED_FILES := $(JS_OUT) $(JS_DEPSFILE)
+GENERATED_FILES += $(CSSMAP_JS) $(CSSMAP_JSON) $(CSSMAP_DEBUG_JS)
+GENERATED_FILES += $(CSS_DEBUG_OUT) $(CSS_OUT)
 
 clean:
 	rm -rf htmlcov .coverage
 	rm -f  $(GENERATED_FILES)
 	rm -f `find . -name \*.pyc -o -name \*~ -o -name @\* -o -name \*.orig -o -name \*.rej -o -name \#*\#`
 
+clean-all: 2dev clean
+	rm -rf $(ASSETS_BUILD) $(TEMPL_BUILD)
 
+#
 # Bootstrapping 
+#
 
 override define GAECUSTOMIZE
 def fix_sys_path():

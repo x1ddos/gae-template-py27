@@ -1,10 +1,11 @@
 .DS_Store
 .venv
 *.pyc
+*.mo
+.*-build
 .coverage
 tmp
 htmlcov
 conf/secrets.py
 ext
-locale
 assets/js/closure-lib

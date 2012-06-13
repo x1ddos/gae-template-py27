@@ -1,4 +1,12 @@
-This one is heavy.
+A not-so-straightforward Google App Engine for Python app template.
+
+Main goals of this template:
+
+  * Backend unit tests-ready with Testbed and Webtest
+  * Frontend JS testing-ready (with Closure's Test Runner)
+  * i18n support for both backend (Babel), Closure JS modules and Soy templates
+  * CSS minification by class names renaming using Closure Stylesheets
+  * An assembling/build/compilation (call it whatever you want) for a production-ready deployment
 
 == To start from scratch ==
 
@@ -10,62 +18,119 @@ This one is heavy.
   # Check for other vars in Makefile (NONTESTS, PROJECT_NAME, etc.)
   # rm -rf .git && git init
 
+For full usage you'll also need to have full source of Closure Library 
+(e.g. linked so that base.js is in assets/js/closure-lib/closure/goog/),
+latest compiler.jar + *.py scripts, closure-stylesheets.jar and SoyToJsSrcCompiler.jar.
+
+
 == Workflow for frontend would go something like this: ==
 
-1. Place Closure-namespaced JS files under `assets/js/<name>/`
-  * add tests to `assets/js/all_tests.js`
-  * you can then run tests individually, e.g. `/js/notepad/notepad_test.html` or all of them from `/js/all_tests.html`
+1. Place Closure-namespaced JS files under "`assets/js/<name>/`"
+  * add tests to "`assets/js/all_tests.js`"
+  * you can then run tests individually, e.g. "`/js/notepad/notepad_test.html`" or all of them from "`/js/all_tests.html`"
   
   See http://closure-library.googlecode.com/svn/docs/index.html for API docs.
 
-3. If you have Soy templates, do `make soy2js`.
+3. If you have Soy templates, do "`make soy`".
 
-  This will compile `templates/soy/*.soy` into `assets/js/<soy_filename>/soy.js`.
+  This will compile "`templates/soy/*.soy`" into "`assets/js/<soy_filename>/soy.js`".
   See https://developers.google.com/closure/templates/docs/commands for template commands.
 
-2. When you add new JS namespaces/modules/files, make sure to run `make jsdeps`
+2. When you add new JS namespaces/modules/files, make sure to run "`make jsdeps`"
 
-  Also, always run jsdeps _after_ soy2js.
+  Also, always run jsdeps _after_ soy.
 
-4. `make js` will compile the whole thing into `assets/js/compiled.js`
+4. "`make js`" will compile the whole thing into "`assets/js/compiled.js`"
    
   To compile with i18n support, do this first:
     * check PROJECT_NAME var in Makefile
-    * `make js_extract_msg`. This will create locale/messages.xtb. Pass it on to the translation team.
+    * "`make js_extract_msg`". This will create locale/messages.xtb. Pass it on to the translation team.
     *  put translated files into locale/xx/LC_MESSAGES/messages.xtb
-    * compile the whole thing with `make js LOCALE=xx`
+    * compile the whole thing with "`make js LOCALE=xx`"
 
-5. For CSS, just do `make css`. 
+5. For CSS, just do "`make css-debug`". 
+  This will compile all "`assets/css/*.gss`" into "`assets/css/compiled_debug.css`".
+  Production-compiled version with classes renaming is done running "`make css-compile`".
 
-  This will compile all `assets/css/*.gss` into `assets/css/compiled.css`.
   See http://code.google.com/p/closure-stylesheets/ for details on GSS.
+
+6. To assemble assets into production-ready folder (default is .assets-build),
+do "`make assets`".
 
 == Jinja2 templates ==
 
 In dev mode, deps.js and goog/base.js should be referenced in a layout template.
-When switching to production/compiled mode, those will be removed/replaced with compiled.js.
+When switching to production/compiled mode, those will be removed/replaced with compiled.js
+(or modules) using tools/assetasm.py.
+
+To compile dev templates into production-ready, do "`make templ`"
+To switch between dev/production templates use "`make 2dev`" and "`make 2prod`".
 
 TODO: explain 
   * how that happens
   * how to use Closure modules
-  * how to switch between dev/production templates
 
-== backend testing ==
+== Backend testing ==
 
 All tests should be placed in tests/ dir. Just create a new file named xxx_test.py,
-it'll be automatically found and ran when you `make t`
+it'll be automatically found and ran when you "`make t`"
 
-To run indivitual test files, do `make t MOD=xxx_test`
+To run indivitual test files, do "`make t MOD=xxx_test`"
 
 See tests/handlers_base_test.py for handlers/functional testing, 
 tests/user_test.py for model testing.
 
-To see tests coverage, do `make cov`. It'll display results in console and
+To see tests coverage, do "`make cov`". It'll display results in console and
 generate HTML report: "open htmlcov/index.html".
 
 Some resources on testing:
   * http://webtest.pythonpaste.org/en/latest/modules/webtest.html
   * https://developers.google.com/appengine/docs/python/tools/localunittesting
+
+== Commands order ==
+
+If you were to compile the whole thing (e.g. for deployment), here's
+the "`make <target>`" commands order in which you could do it:
+
+{{{
+# dev:
+
+# extract i18n messages from the backend
+make babel_extract
+# ONCE per locale: creates a new catalog
+make babel_init LOCALE=en
+# next updates should be run with 
+# 'make babel_update LOCALE=en'.
+# compiles catalogs for all languages
+make babel_compile
+
+# compile Soy templates
+make soy
+# create deps.js file
+make jsdeps
+# this will also create cssmap_debug.js
+make css-debug
+## ready to roll with 'make s' now
+
+
+# production-ready:
+
+# prepare for JS compilation
+make js_extract_msg LOCALE=en
+make css-compiled
+# compile all Closure JS app with advanced optimizations
+make js LOCALE=en
+# compile backend templates
+# this will compile static assets too
+make templ
+## 'make 2prod s' if you wanna test it out manually
+make deploy VER=myver
+# override app ID with
+# make deploy VER=myver APP_ID=myapp
+
+# Always, additional flags are supported through
+# make <target> FLAGS=...
+}}} 
 
 
 == make help ==
@@ -99,7 +164,7 @@ Use 'make <target>' where <target> is one of
   jsdeps           to generate assets/js/deps.js
   (js)compile      to compile JS assets into assets/js/compiled.js
   js_extract_msg LOCALE=xx  to extract goog.getMsg() in XTB format > locale/messages.xtb
-  soy2js           to compile Soy templates
+  soy              to compile Soy templates
 
   == Deployment-related stuff
 
