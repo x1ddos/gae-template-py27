@@ -47,7 +47,10 @@ in the templates.
 
 - <!-- comments --> and `data-build` attributes will be stripped
 
-Alway place data-build as the last attribute of a tag.
+Notes:
+  - Always place data-build as the last attribute of a tag.
+  - data-build and class attribute values should be in double quotes, e.g.
+    class="goog-inline-block" and not class='goog-inline-block'.
 
 
 Command line arguments:
@@ -113,8 +116,10 @@ class Replacer(object):
 
   def replace(self, replmap):
     """
-    Replaces all urls from replmap tuples.
-    replmap is a list of (url, replacement) tuples"
+    Simple string replacement based on provided replmap.
+    replmap is a list of (search_string, replacement) tuples.
+
+    For an advanced replacement see replace_with_cb()
     """
     for src, repl in replmap:
       pattern = re.escape(src)
@@ -133,6 +138,10 @@ class Replacer(object):
 
   def transform(self, regex, cgroup, template, callback):
     """Transforms a string fragment by invoking callback.
+    Note that callback resutl must *not* be idempotent, otherwise
+    it will create an infinite loop.
+
+    For idempotent replacements see replace_with_cb()
 
     Args:
       regex: RegexObject to search on
@@ -150,6 +159,33 @@ class Replacer(object):
       self.data = u''.join([
         self.data[:m.start()], repl, self.data[m.end():]
       ])      
+
+  def replace_with_cb(self, regex, callback):
+    """Replaces all occurances of regex with whatever callback returns.
+
+    Callback is a function that receives MatchObject instance and returns
+    a string, to be replaced with the original fragment.
+    """
+    # repls = []
+    # for match in regex.finditer(self.data):
+    #   repls.append(match, callback(match))
+
+    # frags = []
+    # last_pos = 0
+    # for m, repl in repls:
+    #   frags.append(self.data[last_pos:m.start()])
+    #   frags.append(repl)
+    #   last_pos = m.end()
+
+    frags = []
+    last_pos = 0
+    for match in regex.finditer(self.data):
+      frags.append(self.data[last_pos:match.start()])
+      frags.append(callback(match))
+      last_pos = match.end()
+
+    frags.append(self.data[last_pos:])
+    self.data = u''.join(frags)
 
 
 #
@@ -495,9 +531,13 @@ class TemplatesBuilder(AbstractBuilder):
 
   See module description for details.
   """
-  def __init__(self, src, dst, static_builder, **kwargs):
+  def __init__(self, src, dst, static_builder, cssmap=None, **kwargs):
     super(TemplatesBuilder, self).__init__(src, dst, **kwargs)
     self.__static_builder = static_builder
+    try:
+      self._cssmap = json.loads(open(cssmap).read())
+    except:
+      self._cssmap = None
 
   @property
   def static(self):
@@ -511,6 +551,8 @@ class TemplatesBuilder(AbstractBuilder):
     if not rebuilt: return False
 
     self._out.write("Templates [%s] => [%s]\n" % (self.src, self.dst));
+    if self._cssmap is None:
+      self._out.write("No CSS renaming map was provided.\n")
 
     for filepath, info in self.manifest().items():
       if rebuilt > 1 or self._has_changes(filepath, info):
@@ -566,15 +608,25 @@ class TemplatesBuilder(AbstractBuilder):
     repl = Replacer(data)
     repl.remove(*patterns)
     repl.replace(urlmap)
-    repl.transform(re.compile(
-      r'\s*<script ([^>]*)data-build="compress"([^>]*)>(.*?)</script>', re.DOTALL),
-      3, r'<script\1\2>%s</script>', self._compress_js
+    repl.transform(
+      re.compile(
+        r'\s*<script ([^>]*)data-build="compress"([^>]*)>(.*?)</script>', 
+        re.DOTALL
+      ), 3, r'<script\1\2>%s</script>', self._compress_js
     )
-    repl.transform(re.compile(
-      # at this point tr:/url will be hashified already
-      r'(<[a-z0-9]+ [^>]*)(src|href)="[^"]+"([^>]*)data-build="tr:([^"]+)"', re.DOTALL),
-      4, r'\1\2="%s"\3', lambda url: url
+    repl.transform(
+      re.compile(
+        # at this point tr:/url will be hashified already
+        r'(<[a-z0-9]+ [^>]*)(src|href)="[^"]+"([^>]*)data-build="tr:([^"]+)"', 
+        re.DOTALL
+      ), 4, r'\1\2="%s"\3', lambda url: url
     )
+    # rename CSS classes if we've been provided a map
+    if self._cssmap:
+      repl.replace_with_cb(
+        re.compile(r' class="([^"]+)"', re.DOTALL),
+        lambda m: ' class="%s"' % self._css_class_from_map(m.group(1))
+      )
 
     # store processed template string
     f = codecs.open(target, mode='w', encoding='utf-8')
@@ -594,6 +646,10 @@ class TemplatesBuilder(AbstractBuilder):
     return info['ts'] > int(stat.st_mtime)
 
   def _compress_js(self, script):
+    """
+    Compresses inline Javascript using compiler.jar with 
+    ADVANCED_OPTIMIZATIONS enabled.
+    """
     if self.compiler_cmd:
       self._out.write(">> %s:\n%s\n" % (' '.join(self.compiler_cmd), script))
       # lazy loading 
@@ -606,6 +662,21 @@ class TemplatesBuilder(AbstractBuilder):
       return out.strip()
     else:
       self._err.write(">> Plese, specify --compiler-jar to compress JS\n")
+
+  def _css_class_from_map(self, cssclasses):
+    """
+    Returns renamed CSS classes according to provided map.
+    Classes for which no (or partial) renaming was found remain intact.
+    """
+    classes_list = []
+    for klass in cssclasses.split(' '):
+      parts = klass.split('-')
+      renamed = [self._cssmap.get(p, None) for p in parts]
+      if all(renamed):
+        classes_list.append('-'.join(renamed))
+      else:
+        classes_list.append(klass)
+    return ' '.join(classes_list)
 
 
 #
@@ -623,8 +694,11 @@ def main():
   parser.add_argument('--static-dst', default='.assets-build')
   parser.add_argument('--templates-src', default='templates')
   parser.add_argument('--templates-dst', default='.templates-build')
-  parser.add_argument('--ignore', type=re.compile, action='append', default=[])
-  parser.add_argument('--compiler-jar')
+  parser.add_argument('--ignore', type=re.compile, action='append', default=[],
+    help="Additional ignore patterns for both static assets and templates")
+  parser.add_argument('--compiler-jar', help="Path to Closure Compiler jar")
+  parser.add_argument('--cssmap', 
+    help="Path to a CSS renaming map (JSON) obtained with make css-map")
   args = parser.parse_args()
 
   ignore = _RE_IGNORE + args.ignore
@@ -638,7 +712,8 @@ def main():
   if args.what not in ['static']:
     builder = TemplatesBuilder(
       args.templates_src, args.templates_dst, 
-      _static, ignore_patterns=ignore, compiler_jar=args.compiler_jar)
+      _static, ignore_patterns=ignore, compiler_jar=args.compiler_jar,
+      cssmap=args.cssmap)
 
   meth = 'do_%s' % args.cmd
   getattr(builder, meth)()

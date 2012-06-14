@@ -63,7 +63,10 @@ In dev mode, deps.js and goog/base.js would normally be referenced in a layout t
 When switching to production/compiled mode, those will be removed/replaced with compiled.js
 (or modules) using tools/assetasm.py.
 
-To compile dev templates into production-ready, do "`make templ`"
+To compile dev templates into production-ready, do "`make templ`". If you're using
+GSS classes in the templates too, don't forget to "`make css-map`", otherwise
+those CSS classes will not be renamed in backnd templates (JS frontend always do).
+
 To switch between dev/production templates use "`make 2dev`" and "`make 2prod`".
 
 TODO: explain 

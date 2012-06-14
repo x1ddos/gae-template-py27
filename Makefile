@@ -384,6 +384,7 @@ templ: 2dev
 		--templates-src $(TEMPLATES_DIR) \
 		--templates-dst $(TEMPL_BUILD) \
 		--compiler-jar $(CLOSURE_COMPILER_JAR) \
+		--cssmap $(CSSMAP_JSON) \
 		$(FLAGS) templates $(OUTPUT_MODE) 
 
 #
