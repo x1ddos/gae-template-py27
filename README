@@ -151,6 +151,10 @@ Use 'make <target>' where <target> is one of
   bootstrap   to generate virtualenv in  (ONCE, at the very beginning) 
               and install needed packages from requirements.txt
 
+  all-dev     After bootstrap and installing Closure Tools 
+  all-prod    (see Makefile vars for customizing paths) it is wise 
+              to check that at least minimum of the stack works
+
   == i18n and Babel
 
   1. babel_extract                     - extracts all translactions according to babel.cfg
