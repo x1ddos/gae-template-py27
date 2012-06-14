@@ -82,6 +82,7 @@ import json
 _RE_IGNORE = [
   re.compile('^(.*/)?\..*'),
   re.compile('.*\.gss$'),
+  re.compile('js/cssmap.*'),
   re.compile('.*\.soy$'),
   re.compile('^(.*/)?soyutils.*\.js'),
   re.compile('^(.*/)?deps\.js'),

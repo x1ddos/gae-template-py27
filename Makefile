@@ -21,8 +21,8 @@ ASSETS_CSS    := $(ASSETS_DIR)/css
 ASSETS_JS     := $(ASSETS_DIR)/js
 
 # Compiled output of all *.gss
-CSS_OUT       := $(ASSETS_CSS)/compiled.css
-CSS_DEBUG_OUT := $(ASSETS_CSS)/compiled_debug.css
+CSS_COMPILED  := $(ASSETS_CSS)/compiled.css
+CSS_DEBUG     := $(ASSETS_CSS)/compiled_debug.css
 # Compiled Javascripts (with advanced optimisations)
 JS_OUT        := $(ASSETS_JS)/compiled.js
 
@@ -126,7 +126,8 @@ help:
 	@echo "  css-debug        to compile *.gss into $(CSS_DEBUG_OUT)"
 	@echo "  css-compiled     to compile and minify *.gss (with classes renaming)"
 	@echo "                   into $(CSS_OUT)"
-	@echo "                   Customize which files to compile and how with"
+	@echo "  css-map          creates renaming map in JSON format."
+	@echo "                   Customize which files and how to compile with e.g."
 	@echo "                   GSS_FILES=style.gss FLAGS=--rename DEBUG"
 	@echo "  jsdeps           to generate $(ASSETS_JS)/deps.js"
 	@echo "  (js)compile      to compile JS assets into $(ASSETS_JS)/$(JS_OUT)"
@@ -203,24 +204,33 @@ r remote:
 # GSS/CSS stuff
 #
 
-CLOSURE_STYLESHEETS_CMD := $(JAVA) -jar $(CLOSURE_STYLESHEETS_JAR) $(FLAGS)
+CLOSURE_STYLESHEETS_CMD := $(JAVA) -jar $(CLOSURE_STYLESHEETS_JAR)
 GSS_FILES := $(wildcard $(ASSETS_CSS)/*.gss)
 
 # override with make css-debug FLAGS="--rename DEBUG"
-css-debug:
+_compile_gss:
 	$(CLOSURE_STYLESHEETS_CMD) \
-		--rename NONE \
-		--output-renaming-map $(CSSMAP_DEBUG_JS) \
-		--output-renaming-map-format CLOSURE_UNCOMPILED \
-		 --pretty-print \
-	  $(FLAGS) $(GSS_FILES) > $(CSS_DEBUG_OUT)
+		--output-renaming-map $(CSSMAP_OUT) \
+		--output-renaming-map-format $(CSSMAP_FORMAT) \
+		$(_args) $(FLAGS) $(GSS_FILES) > $(CSS_OUT)
 
-css-compiled:
-	$(CLOSURE_STYLESHEETS_CMD) \
-		--rename CLOSURE \
-		--output-renaming-map $(CSSMAP_JS) \
-		--output-renaming-map-format CLOSURE_COMPILED \
-		$(FLAGS) $(GSS_FILES) > $(CSS_OUT)
+css-debug: CSS_OUT = $(CSS_DEBUG)
+css-debug: CSSMAP_FORMAT = CLOSURE_UNCOMPILED
+css-debug: CSSMAP_OUT = $(CSSMAP_DEBUG_JS)
+css-debug: _args = --pretty-print --rename NONE
+css-debug: _compile_gss
+
+css-compiled: CSS_OUT = $(CSS_COMPILED)
+css-compiled: CSSMAP_FORMAT = CLOSURE_COMPILED
+css-compiled: CSSMAP_OUT = $(CSSMAP_JS)
+css-compiled: _args = --rename CLOSURE
+css-compiled: _compile_gss
+
+css-map: CSS_OUT = $(CSS_COMPILED)
+css-map: CSSMAP_FORMAT = JSON
+css-map: CSSMAP_OUT = $(CSSMAP_JSON)
+css-map: _args = --rename CLOSURE
+css-map: _compile_gss
 
 #
 # Closure lib / JS stuff
@@ -391,14 +401,15 @@ deploy: 2prod
 #
 
 # Files to clean up
-GENERATED_FILES := $(JS_OUT) $(JS_DEPSFILE)
-GENERATED_FILES += $(CSSMAP_JS) $(CSSMAP_JSON) $(CSSMAP_DEBUG_JS)
-GENERATED_FILES += $(CSS_DEBUG_OUT) $(CSS_OUT)
+GENERATED_FILES := htmlcov .coverage 
+GENERATED_FILES += $(JS_OUT) $(JS_DEPSFILE)
+GENERATED_FILES += $(CSSMAP_JS) $(CSSMAP_DEBUG_JS) $(CSSMAP_JSON) 
+GENERATED_FILES += $(CSS_DEBUG) $(CSS_COMPILED)
 
 clean:
-	rm -rf htmlcov .coverage
-	rm -f  $(GENERATED_FILES)
+	rm -rf $(GENERATED_FILES)
 	rm -f `find . -name \*.pyc -o -name \*~ -o -name @\* -o -name \*.orig -o -name \*.rej -o -name \#*\#`
+	rm -f `find $(ASSETS_DIR) -name soy.js`
 
 clean-all: 2dev clean
 	rm -rf $(ASSETS_BUILD) $(TEMPL_BUILD)

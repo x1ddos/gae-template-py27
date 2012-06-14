@@ -31,14 +31,14 @@ latest compiler.jar + *.py scripts, closure-stylesheets.jar and SoyToJsSrcCompil
   
   See http://closure-library.googlecode.com/svn/docs/index.html for API docs.
 
-3. If you have Soy templates, do "`make soy`".
+2. If you have Soy templates, do "`make soy`".
 
   This will compile "`templates/soy/*.soy`" into "`assets/js/<soy_filename>/soy.js`".
   See https://developers.google.com/closure/templates/docs/commands for template commands.
 
-2. When you add new JS namespaces/modules/files, make sure to run "`make jsdeps`"
+3. When you add new JS namespaces/modules/files, make sure to run "`make jsdeps`"
 
-  Also, always run jsdeps _after_ soy.
+  Also, it's good to run jsdeps _after_ soy (soy templates normally contribute to the dependencies).
 
 4. "`make js`" will compile the whole thing into "`assets/js/compiled.js`"
    
@@ -59,7 +59,7 @@ do "`make assets`".
 
 == Jinja2 templates ==
 
-In dev mode, deps.js and goog/base.js should be referenced in a layout template.
+In dev mode, deps.js and goog/base.js would normally be referenced in a layout template.
 When switching to production/compiled mode, those will be removed/replaced with compiled.js
 (or modules) using tools/assetasm.py.
 
@@ -80,7 +80,7 @@ To run indivitual test files, do "`make t MOD=xxx_test`"
 See tests/handlers_base_test.py for handlers/functional testing, 
 tests/user_test.py for model testing.
 
-To see tests coverage, do "`make cov`". It'll display results in console and
+For tests coverage, do "`make cov`". It'll display results in console and
 generate HTML report: "open htmlcov/index.html".
 
 Some resources on testing:
@@ -104,7 +104,7 @@ make babel_init LOCALE=en
 # compiles catalogs for all languages
 make babel_compile
 
-# compile Soy templates
+# compile Soy templates.
 make soy
 # create deps.js file
 make jsdeps
@@ -121,6 +121,7 @@ make css-compiled
 # compile all Closure JS app with advanced optimizations
 make js LOCALE=en
 # compile backend templates
+make css-map # creates CSS renaming map in JSON format
 # this will compile static assets too
 make templ
 ## 'make 2prod s' if you wanna test it out manually
@@ -160,16 +161,40 @@ Use 'make <target>' where <target> is one of
 
   == Closure-related stuff
 
-  css              to compile assets/css/*.gss into assets/css/compiled.css
+  css-debug        to compile *.gss into 
+  css-compiled     to compile and minify *.gss (with classes renaming)
+                   into 
+  css-map          creates renaming map in JSON format.
+                   Customize which files and how to compile with e.g.
+                   GSS_FILES=style.gss FLAGS=--rename DEBUG
   jsdeps           to generate assets/js/deps.js
-  (js)compile      to compile JS assets into assets/js/compiled.js
-  js_extract_msg LOCALE=xx  to extract goog.getMsg() in XTB format > locale/messages.xtb
-  soy              to compile Soy templates
+  (js)compile      to compile JS assets into assets/js/assets/js/compiled.js
+                   OUTPUT_MODE=list to list dependencies
+                   LOCALE=xx to compile with i18n
+  js_extract_msg LOCALE=xx  
+                   to extract goog.getMsg() in XTB format > locale/messages.xtb
+  soy              to compile Soy templates. Override files to compile
+                   with SOY_FILES=...
 
   == Deployment-related stuff
 
-  deploy      to deploy the app on production servers. You could do
-              make deploy VER=myver FLAGS=-v
+  templ       to assemble templates/*.html with tools/assetasm.py
+  assets      to assemble assets/*
+              Note take assetasm.py will also invoke assets 
+              building when run with 'make templ'
+
+  Alternative output for templ and assets targets works with
+  OUTPUT_MODE={manifest|check}
+
+  deploy      to deploy the app on production servers.
+              You could do make deploy VER=myver FLAGS=-v
+  2prod       will switch to production (build) version of assets
+              and templates
+  2dev        will switch to development version of assets
+              and templates
+  clean       removes .pyc, htmlcov, .coverage and CSS/JS compiled
+              stuff
+  clean-all   will also remove last assets and templates build
 
 You can always use FLAGS='--whatever' as addition arguments to any target.
 }}}
