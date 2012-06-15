@@ -433,6 +433,7 @@ all-prod: 2dev soy css-compiled js
 	make test 
 	make 2prod
 
+
 #
 # Bootstrapping 
 #
@@ -458,9 +459,15 @@ endef
 export GAECUSTOMIZE
 export GAEPTH
 
+# a dir where py packages live
+EXT_DIR=ext
+
+# additional flags to pip install -r requirements.txt
+# e.g. --timeout=30
+PIP_FLAGS=
+
 # Creates new virtualenv in VENV_DIR
 # http://schettino72.wordpress.com/2010/11/21/appengine-virtualenv/
-EXT_DIR=ext
 bootstrap:
 	@cp -v conf/secrets.py.templ conf/secrets.py
 
@@ -468,7 +475,7 @@ bootstrap:
 	@echo "$$GAECUSTOMIZE" > $(VENV_DIR)/lib/python2.7/site-packages/gaecustomize.py
 	@echo "$$GAEPTH" > $(VENV_DIR)/lib/python2.7/site-packages/gae.pth
 	@echo
-	$(VENV_DIR)/bin/pip install -r requirements.txt
+	$(VENV_DIR)/bin/pip install -r requirements.txt $(PIP_FLAGS)
 
 	@mkdir -p $(EXT_DIR)
 	cp -r $(VENV_DIR)/lib/python2.7/site-packages/babel $(EXT_DIR)/
