@@ -481,7 +481,7 @@ bootstrap:
 	cp -r $(VENV_DIR)/lib/python2.7/site-packages/babel $(EXT_DIR)/
 	cp -r $(VENV_DIR)/lib/python2.7/site-packages/pytz $(EXT_DIR)/
 
-	@rm -rf lib/babel/localedata/*
+	@rm -rf $(EXT_DIR)/babel/localedata/*
 	@cp -v $(VENV_DIR)/lib/python2.7/site-packages/babel/localedata/en.dat $(EXT_DIR)/babel/localedata/
 	@cp -v $(VENV_DIR)/lib/python2.7/site-packages/babel/localedata/en_US.dat $(EXT_DIR)/babel/localedata/
 
