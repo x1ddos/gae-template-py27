@@ -464,6 +464,8 @@ EXT_DIR=ext
 
 # additional flags to pip install -r requirements.txt
 # e.g. --timeout=30
+# Using an shell env variable PIP_DOWNLOAD_CACHE
+# set to e.g. ~/Library/Caches/pip-downloads helps too.
 PIP_FLAGS=
 
 # Creates new virtualenv in VENV_DIR
