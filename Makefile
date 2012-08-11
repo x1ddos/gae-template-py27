@@ -337,31 +337,34 @@ babel_update:
 #
 # Dev/production(build) state switching
 #
-
 DEV_MARKER := .dev
-ASSETS_IN_DEV := $(shell test -f $(ASSETS_DIR)/$(DEV_MARKER) && echo 1)
-TEMPL_IN_DEV := $(shell test -f $(TEMPLATES_DIR)/$(DEV_MARKER) && echo 1)
 
 _assets2dev:
-	@if [ -z $(ASSETS_IN_DEV) ]; \
-		then mv $(ASSETS_DIR) $(ASSETS_BUILD) && mv $(ASSETS_DEV) $(ASSETS_DIR); \
+	@if [ ! -f $(ASSETS_DIR)/$(DEV_MARKER) ]; then \
+		echo 'Switching to dev assets' \
+		&& mv $(ASSETS_DIR) $(ASSETS_BUILD) && mv $(ASSETS_DEV) $(ASSETS_DIR); \
 	fi
 
 _assets2prod:
-	@if [ -n $(ASSETS_IN_DEV) ]; \
-		then mkdir -p $(ASSETS_BUILD); \
-		mv $(ASSETS_DIR) $(ASSETS_DEV) && mv $(ASSETS_BUILD) $(ASSETS_DIR); \
+	@if [ -f $(ASSETS_DIR)/$(DEV_MARKER) ]; then \
+		echo 'Switching to production assets' \
+		&& mkdir -p $(ASSETS_BUILD) \
+		&& mv $(ASSETS_DIR) $(ASSETS_DEV) && mv $(ASSETS_BUILD) $(ASSETS_DIR); \
 	fi
 
 _templ2dev:
-	@if [ -z $(TEMPL_IN_DEV) ]; \
-		then mv $(TEMPLATES_DIR) $(TEMPL_BUILD) && mv $(TEMPL_DEV) $(TEMPLATES_DIR); \
+	@if [ ! -f $(TEMPLATES_DIR)/$(DEV_MARKER) ]; then \
+		echo 'Switching to dev templates' \
+		&& mv $(TEMPLATES_DIR) $(TEMPL_BUILD) \
+		&& mv $(TEMPL_DEV) $(TEMPLATES_DIR); \
 	fi
 
 _templ2prod:
-	@if [ -n $(TEMPL_IN_DEV) ]; \
-		then mkdir -p $(TEMPL_BUILD); \
-		mv $(TEMPLATES_DIR) $(TEMPL_DEV) && mv $(TEMPL_BUILD) $(TEMPLATES_DIR); \
+	@if [ -f $(TEMPLATES_DIR)/$(DEV_MARKER) ]; then \
+		echo 'Switching to production templates' \
+		&& mkdir -p $(TEMPL_BUILD) \
+		&& mv $(TEMPLATES_DIR) $(TEMPL_DEV) \
+		&& mv $(TEMPL_BUILD) $(TEMPLATES_DIR); \
 	fi
 
 2dev: _assets2dev _templ2dev
